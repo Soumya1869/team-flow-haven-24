@@ -40,7 +40,7 @@ export function createSeed(): DemoDb {
     ["u-sofia", "Sofia Alvarez", "sofia@harborhealth.org"],
     ["u-hannah", "Hannah Weiss", "hannah@harborhealth.org"],
     ["u-tom", "Tom Becker", "tom@fieldnote.studio"],
-  ].map(([id, name, email], i) => ({ id, name, email, emailVerified: i !== 3, createdAt: iso(-200 + i * 10) }));
+  ].map(([id, name, email], i) => ({ id: id!, name: name!, email: email!, i })).map(({ id, name, email, i }) => ({ id, name, email, emailVerified: i !== 3, createdAt: iso(-200 + i * 10) }));
 
   const workspaces: DemoWorkspace[] = [
     { id: "ws-northwind", name: "Northwind Labs", slug: "northwind", createdAt: iso(-180) },
