@@ -17,8 +17,8 @@ import { membersQuery, projectsQuery, tasksQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_workspace/")({
-  validateSearch: (s: Record<string, unknown>): { project?: string } => ({
-    project: typeof s.project === "string" ? s.project : undefined,
+  validateSearch: (s: Record<string, unknown>): { project?: string | undefined } => ({
+    project: typeof s["project"] === "string" ? s["project"] : undefined,
   }),
   head: () => ({
     meta: [

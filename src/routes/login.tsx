@@ -10,9 +10,11 @@ import { api, errorMessage, isDemo } from "@/lib/api";
 import { qk } from "@/lib/queries";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>): { redirect?: string } => ({
-    redirect: typeof s.redirect === "string" && s.redirect.startsWith("/") ? s.redirect : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string | undefined } => {
+    const r = s["redirect"];
+    // only same-origin relative paths, to prevent open redirects
+    return { redirect: typeof r === "string" && r.startsWith("/") && !r.startsWith("//") ? r : undefined };
+  },
   head: () => ({
     meta: [
       { title: "Sign in — TeamSpace" },

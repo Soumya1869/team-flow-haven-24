@@ -10,12 +10,12 @@ import type { AuthResponse, TaskQuery, TeamSpaceApi } from "./types";
 let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
 
-const base = () => (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const base = () => (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "") ?? "";
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return null;
   const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return m ? decodeURIComponent(m[1]) : null;
+  return m?.[1] ? decodeURIComponent(m[1]) : null;
 }
 
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -23,7 +23,7 @@ type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 async function raw(method: Method, path: string, body?: unknown, withAuth = true) {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (withAuth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  if (withAuth && accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
   if (method !== "GET") {
     const xsrf = readCookie("XSRF-TOKEN");
     if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
@@ -31,7 +31,7 @@ async function raw(method: Method, path: string, body?: unknown, withAuth = true
   return fetch(base() + path, {
     method,
     headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? null : JSON.stringify(body),
     credentials: "include", // needed for the refresh cookie; CORS must allow exactly this origin
   });
 }
