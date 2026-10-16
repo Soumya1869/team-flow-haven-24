@@ -116,6 +116,8 @@ export interface TeamSpaceApi {
     changePassword(req: ChangePasswordRequest): Promise<void>;
     updateProfile(req: UpdateProfileRequest): Promise<UserDto>;
     requestPasswordReset(email: string): Promise<void>;
+    confirmPasswordReset(token: string, newPassword: string): Promise<void>;
+    confirmEmail(token: string): Promise<void>;
     resendVerification(): Promise<void>;
   };
   sessions: {

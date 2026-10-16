@@ -3,7 +3,7 @@
 A team project management platform built as a portfolio piece: workspaces, projects, a Kanban board, assignments, comments, members with per-workspace roles, and account security.
 
 - **Frontend (this repo):** React 19, TypeScript, TanStack Router (file-based), TanStack Query, Tailwind CSS v4 and shadcn/ui.
-- **Intended backend (not in this repo yet):** Spring Boot 3, Spring Security, Spring Data JPA, Bean Validation, PostgreSQL, Flyway and JWT.
+- **Backend (`backend/`):** Spring Boot 3, Spring Security, JPA/Hibernate, Bean Validation, PostgreSQL, Flyway and JWT. See [backend setup](backend/README.md) for Docker, configuration and tests.
 
 > This project template uses TanStack Router rather than React Router; routing is file-based under `src/routes/`.
 
@@ -32,7 +32,11 @@ Demo accounts: `priya@northwind.dev` (Owner, Member and Admin across 3 workspace
 
 `bunx vitest run` covers the role rules, 401 without a session, 403 for non-members, 404 for cross-workspace ids, last-owner protection, rejection of revoked sessions, and a check that no password ends up in browser storage.
 
-## Remaining Spring Boot work
+## Backend implementation
+
+The backend is now included. Start with [backend/README.md](backend/README.md). Authentication, rotating refresh tokens, email codes, session revocation and all workspace/project/task/comment endpoints are implemented. The React HTTP client bootstraps CSRF from `/api/auth/csrf`; reset and verification code forms are included. Demo mode remains available.
+
+The following original checklist is retained as the architecture and test requirements; see backend documentation for implementation scope and remaining production work.
 
 1. Project skeleton: Spring Boot 3 / Java 21, Flyway migrations for `users`, `workspaces`, `memberships(workspace_id, user_id, role)`, `projects`, `tasks`, `comments`, `sessions`, `refresh_tokens`, `email_tokens`.
 2. Security: `SecurityFilterChain` with a stateless JWT resource server for `/api/**`, `CookieCsrfTokenRepository` for `/api/auth/refresh|logout`, a strict `CorsConfigurationSource`, and an Argon2/BCrypt `PasswordEncoder`.
@@ -46,4 +50,4 @@ Demo accounts: `priya@northwind.dev` (Owner, Member and Admin across 3 workspace
    - **CSRF/CORS:** `/auth/refresh` without `X-XSRF-TOKEN` gets 403. A preflight from an unlisted origin is rejected.
    - **Auth basics:** expired or tampered JWT gets 401, wrong password gets 401 with no difference from an unknown email, and reset tokens are single-use and expire.
 
-This app is kept as an editor preview only and isn't published.
+The supplied frontend was published separately in Lovable. Changes in this local copy have not been pushed or deployed.

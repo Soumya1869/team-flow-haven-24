@@ -41,6 +41,8 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [resetMode, setResetMode] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -61,19 +63,38 @@ function LoginPage() {
 
   const requestReset = async (e: FormEvent) => {
     e.preventDefault();
-    await api.auth.requestPasswordReset(email);
-    toast.success(isDemo ? "Demo mode: no email is sent" : "If that account exists, a reset link is on its way.");
-    setResetMode(false);
+    setPending(true); setError(null);
+    try {
+      await api.auth.requestPasswordReset(email);
+      toast.success(isDemo ? "Demo mode: no email is sent" : "If that account exists, a reset code is on its way.");
+    } catch (err) { setError(errorMessage(err)); }
+    finally { setPending(false); }
+  };
+
+  const confirmReset = async (e: FormEvent) => {
+    e.preventDefault(); setPending(true); setError(null);
+    try {
+      await api.auth.confirmPasswordReset(resetCode.trim(), newPassword);
+      setResetCode(""); setNewPassword(""); setPassword(""); setResetMode(false);
+      toast.success("Password reset. Sign in with your new password.");
+    } catch (err) { setError(errorMessage(err)); }
+    finally { setPending(false); }
   };
 
   if (resetMode) {
     return (
-      <AuthLayout title="Reset your password" subtitle="We'll email a single-use link that expires in 30 minutes.">
+      <AuthLayout title="Reset your password" subtitle="We'll email a single-use code that expires in 30 minutes.">
         <form onSubmit={requestReset} className="space-y-4">
           <div className="space-y-1.5"><Label htmlFor="reset-email">Email</Label><Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
-          <Button type="submit" className="w-full">Send reset link</Button>
+          <Button type="submit" className="w-full" disabled={pending}>Send reset code</Button>
           <Button type="button" variant="ghost" className="w-full" onClick={() => setResetMode(false)}>Back to sign in</Button>
         </form>
+        {!isDemo && <form onSubmit={confirmReset} className="mt-6 space-y-4 border-t pt-6">
+          <div className="space-y-1.5"><Label htmlFor="reset-code">Code from email</Label><Input id="reset-code" required value={resetCode} onChange={(e) => setResetCode(e.target.value)} autoComplete="off" /></div>
+          <div className="space-y-1.5"><Label htmlFor="reset-password">New password</Label><Input id="reset-password" type="password" required minLength={12} maxLength={72} autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></div>
+          <Button type="submit" className="w-full" disabled={pending}>Set new password</Button>
+        </form>}
+        {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       </AuthLayout>
     );
   }

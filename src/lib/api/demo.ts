@@ -148,6 +148,8 @@ export const demoApi: TeamSpaceApi = {
       return userDto(u);
     }),
     requestPasswordReset: () => run(() => undefined), // always 202: never reveal whether the email exists
+    confirmPasswordReset: () => run(() => { throw new ApiError(400, "DEMO_ONLY", "Email codes are only available with the real API"); }),
+    confirmEmail: () => run(() => { throw new ApiError(400, "DEMO_ONLY", "Email codes are only available with the real API"); }),
     resendVerification: () => run((d) => { requireUser(d); }),
   },
   sessions: {

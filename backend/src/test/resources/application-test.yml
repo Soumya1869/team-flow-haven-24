@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:teamspace;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+teamspace:
+  jwt-secret: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=
+  cookie-secure: false
+  cookie-same-site: Strict
+  allowed-origins: http://localhost:5173

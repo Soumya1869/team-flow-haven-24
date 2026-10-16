@@ -28,6 +28,7 @@ Errors use RFC 7807 `ProblemDetail`: `{ type, title, status, detail, code, error
 ### Auth and account
 | Method | Path | Body → Response | Notes |
 |---|---|---|---|
+| GET | `/auth/csrf` | → `{ token }` | Sets the CSRF cookie; response token is held in SPA memory and echoed as `X-XSRF-TOKEN`. Supports separate API origins. |
 | POST | `/auth/register` | `RegisterRequest` → `AuthResponse` (201) | Sets the refresh cookie and sends a verification email. |
 | POST | `/auth/login` | `LoginRequest` → `AuthResponse` | Wrong credentials → 401 `INVALID_CREDENTIALS`. Rate limited. |
 | POST | `/auth/refresh` | cookie → `AuthResponse` | Requires CSRF. Rotates the token. |
@@ -75,3 +76,9 @@ Errors use RFC 7807 `ProblemDetail`: `{ type, title, status, detail, code, error
 | DELETE | `/workspaces/{ws}/comments/{id}` | author or ADMIN | → 204 |
 
 Validation limits: task title 1–200 characters, description ≤ 5000, comment body 1–2000, project key `^[A-Z][A-Z0-9]{1,5}$` (unique per workspace), names ≤ 80.
+
+## Implementation notes
+
+The API is implemented in `backend/`. IDs are UUID strings. Access JWTs also contain a `sid` claim; session state is checked on authenticated requests so revocation takes effect immediately. Password length is at least 12 characters and at most 72 UTF-8 bytes (BCrypt limit). Refresh sessions have a fixed 30-day lifetime. Email codes are entered in the frontend's account and password reset forms; raw codes are never returned by the API or stored in the database.
+
+PATCH task fields distinguish omission from explicit `null`: `null` clears assignee/due date, while required fields reject `null`. Deleting a workspace member unassigns their tasks. Adding members requires an already-registered account; this is not an email invitation workflow. In-memory rate limits may return `429 RATE_LIMITED`.

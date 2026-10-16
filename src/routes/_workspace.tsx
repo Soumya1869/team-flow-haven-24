@@ -1,11 +1,14 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app/AppShell";
 import { ErrorState, ListSkeleton } from "@/components/app/bits";
 import { ACTIVE_WS_KEY, WorkspaceContext } from "@/components/app/workspace-context";
-import { isApiError } from "@/lib/api";
-import { meQuery, workspacesQuery } from "@/lib/queries";
+import { api, isApiError } from "@/lib/api";
+import { meQuery, workspacesQuery, qk, onError } from "@/lib/queries";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Client-only: demo data lives in browser storage, and real mode holds the access token in memory.
 export const Route = createFileRoute("/_workspace")({
@@ -39,7 +42,7 @@ function WorkspaceLayout() {
   if (workspaces.isError) return <div className="p-10"><ErrorState error={workspaces.error} onRetry={() => workspaces.refetch()} /></div>;
   if (!value) {
     if (workspaces.data?.length === 0) {
-      return <div className="p-10"><ErrorState error={new Error("You're not a member of any workspace yet. Ask an owner to invite you.")} /></div>;
+      return <FirstWorkspace />;
     }
     return <div className="p-10"><ListSkeleton rows={6} /></div>;
   }
@@ -50,4 +53,23 @@ function WorkspaceLayout() {
       </AppShell>
     </WorkspaceContext.Provider>
   );
+}
+
+function FirstWorkspace() {
+  const [name, setName] = useState("");
+  const qc = useQueryClient();
+  const create = useMutation({
+    mutationFn: () => api.workspaces.create({ name: name.trim() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.workspaces }),
+    onError,
+  });
+  return <main className="mx-auto max-w-md px-6 py-20">
+    <h1 className="text-2xl font-semibold">Create your first workspace</h1>
+    <p className="mt-2 text-sm text-muted-foreground">Give your team a place to organize projects and tasks. You will be its owner.</p>
+    <form className="mt-6 space-y-4" onSubmit={(e) => { e.preventDefault(); if (name.trim()) create.mutate(); }}>
+      <Label htmlFor="first-workspace">Workspace name</Label>
+      <Input id="first-workspace" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+      <Button type="submit" disabled={create.isPending || !name.trim()}>{create.isPending ? "Creating…" : "Create workspace"}</Button>
+    </form>
+  </main>;
 }

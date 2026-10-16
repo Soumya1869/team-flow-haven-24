@@ -9,13 +9,21 @@ import type { AuthResponse, TaskQuery, TeamSpaceApi } from "./types";
  */
 let accessToken: string | null = null;
 let refreshing: Promise<boolean> | null = null;
+let csrfToken: string | null = null;
+let csrfLoading: Promise<string> | null = null;
 
 const base = () => (import.meta.env["VITE_API_BASE_URL"] as string | undefined)?.replace(/\/$/, "") ?? "";
 
-function readCookie(name: string) {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return m?.[1] ? decodeURIComponent(m[1]) : null;
+async function csrf(): Promise<string> {
+  if (csrfToken) return csrfToken;
+  csrfLoading ??= (async () => {
+    const res = await fetch(base() + "/api/auth/csrf", { credentials: "include", headers: { Accept: "application/json" } });
+    if (!res.ok) throw await toError(res);
+    const data = (await res.json()) as { token: string };
+    csrfToken = data.token;
+    return data.token;
+  })().finally(() => { csrfLoading = null; });
+  return csrfLoading;
 }
 
 type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -25,8 +33,9 @@ async function raw(method: Method, path: string, body?: unknown, withAuth = true
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (withAuth && accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
   if (method !== "GET") {
-    const xsrf = readCookie("XSRF-TOKEN");
-    if (xsrf) headers["X-XSRF-TOKEN"] = xsrf;
+    if (path === "/api/auth/refresh" || path === "/api/auth/logout") {
+      headers["X-XSRF-TOKEN"] = await csrf();
+    }
   }
   return fetch(base() + path, {
     method,
@@ -54,6 +63,7 @@ async function refresh(): Promise<boolean> {
       accessToken = data.accessToken;
       return true;
     } catch {
+      accessToken = null;
       return false;
     } finally {
       setTimeout(() => { refreshing = null; }, 0);
@@ -78,6 +88,11 @@ async function authCall(path: string, body: unknown): Promise<AuthResponse> {
   return data;
 }
 
+async function publicAuthCall(path: string, body: unknown): Promise<void> {
+  const res = await raw("POST", path, body, false);
+  if (!res.ok) throw await toError(res);
+}
+
 const qs = (q?: TaskQuery) => {
   const p = new URLSearchParams();
   Object.entries(q ?? {}).forEach(([k, v]) => v && p.set(k, String(v)));
@@ -91,11 +106,18 @@ export const httpApi: TeamSpaceApi = {
   auth: {
     login: (b) => authCall("/api/auth/login", b),
     register: (b) => authCall("/api/auth/register", b),
-    logout: async () => { try { await req<void>("POST", "/api/auth/logout"); } finally { accessToken = null; } },
+    logout: async () => {
+      try {
+        const res = await raw("POST", "/api/auth/logout", undefined, false);
+        if (!res.ok) throw await toError(res);
+      } finally { accessToken = null; csrfToken = null; }
+    },
     me: () => req("GET", "/api/auth/me"),
     changePassword: (b) => req("POST", "/api/auth/password", b),
     updateProfile: (b) => req("PATCH", "/api/users/me", b),
-    requestPasswordReset: (email) => req("POST", "/api/auth/password-reset/request", { email }),
+    requestPasswordReset: (email) => publicAuthCall("/api/auth/password-reset/request", { email }),
+    confirmPasswordReset: (token, newPassword) => publicAuthCall("/api/auth/password-reset/confirm", { token, newPassword }),
+    confirmEmail: (token) => publicAuthCall("/api/auth/verify-email/confirm", { token }),
     resendVerification: () => req("POST", "/api/auth/verify-email/resend"),
   },
   sessions: {

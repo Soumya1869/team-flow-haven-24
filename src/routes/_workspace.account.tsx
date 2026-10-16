@@ -49,6 +49,8 @@ function Profile() {
   const { user } = useWorkspace();
   const qc = useQueryClient();
   const [name, setName] = useState(user.name);
+  const [verificationCode, setVerificationCode] = useState("");
+  const verify = useMutation({ mutationFn: () => api.auth.confirmEmail(verificationCode.trim()), onSuccess: () => { setVerificationCode(""); qc.invalidateQueries({ queryKey: qk.me }); toast.success("Email verified"); }, onError });
   const save = useMutation({ mutationFn: () => api.auth.updateProfile({ name }), onSuccess: () => { qc.invalidateQueries({ queryKey: qk.me }); toast.success("Profile saved"); }, onError });
   const resend = useMutation({ mutationFn: () => api.auth.resendVerification(), onSuccess: () => toast.success(isDemo ? "Demo mode: no email is actually sent" : "Verification email sent"), onError });
   return (
@@ -64,10 +66,15 @@ function Profile() {
         {user.emailVerified ? <BadgeCheck className="size-5 text-success" aria-hidden /> : <MailWarning className="size-5 text-warning" aria-hidden />}
         <div className="flex-1">
           <p className="font-medium">{user.emailVerified ? "Email verified" : "Email not verified"}</p>
-          <p className="text-sm text-muted-foreground">{user.emailVerified ? "You can receive password reset links." : "Verify your email to enable password reset."}</p>
+          <p className="text-sm text-muted-foreground">{isDemo ? "Simulated email status; no email is sent in demo mode." : user.emailVerified ? "Your email address has been confirmed." : "Enter the code sent to your email to confirm this address."}</p>
         </div>
         {!user.emailVerified && <Button variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>Resend verification</Button>}
       </div>
+      {!isDemo && !user.emailVerified && <form className={card} onSubmit={(e) => { e.preventDefault(); verify.mutate(); }}>
+        <Label htmlFor="verify-code">Verification code</Label>
+        <Input id="verify-code" className="mt-2" required autoComplete="off" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+        <Button type="submit" className="mt-4" disabled={verify.isPending}>Verify email</Button>
+      </form>}
     </div>
   );
 }
