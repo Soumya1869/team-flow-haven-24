@@ -7,3 +7,5 @@ export const api: TeamSpaceApi = import.meta.env["VITE_API_MODE"] === "http" ? h
 export const isDemo = api.mode === "demo";
 export * from "./types";
 export { ApiError, isApiError, errorMessage } from "./errors";
+
+export const emailEnabled = import.meta.env["VITE_EMAIL_ENABLED"] === "true";

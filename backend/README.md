@@ -72,3 +72,9 @@ This runs the same 9 integration tests using PostgreSQL. Tests create synthetic 
 ## Practical limits
 
 This is a portfolio backend, not a production readiness certification. Lists currently return all matching records; add pagination and aggregate queries for large datasets. Workspace-level locks favor straightforward correctness over write throughput. Rate limiting is per application instance and uses the direct peer IP; configure a trusted gateway/shared limiter before horizontal scaling. Email delivery is synchronous; password-reset requests keep a generic accepted response even if SMTP fails, but there is no durable mail retry queue. Add a mail outbox, cleanup of expired sessions/tokens, monitoring, backups, and dependency scanning before production use. Attachments and invitation links are not implemented.
+
+## No-email portfolio deployment
+
+EMAIL_ENABLED defaults to false. Registration keeps emailVerified=false and does not send mail. Verification and password-reset endpoints return 503 EMAIL_DISABLED. Sign-in, refresh, authorization, sessions and signed-in password changes remain available. Enable EMAIL_ENABLED=true only with a working mail service; the local Compose setup does this for Mailpit. Set VITE_EMAIL_ENABLED=true in the frontend only when backend email is enabled.
+
+The committed .env.production contains public frontend settings for the Render API, with email controls disabled. It contains no credentials. Password recovery is unavailable on this portfolio deployment.

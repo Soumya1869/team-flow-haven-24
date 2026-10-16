@@ -9,16 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ErrorState, ListSkeleton, PageHeader } from "@/components/app/bits";
 import { useWorkspace } from "@/components/app/workspace-context";
-import { api, isDemo } from "@/lib/api";
+import { api, isDemo, emailEnabled } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 import { onError, qk, sessionsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/_workspace/account")({
   head: () => ({
     meta: [
-      { title: "Account & security — TeamSpace" },
+      { title: "Account & security â€” TeamSpace" },
       { name: "description", content: "Profile, password, email verification and active sessions for your TeamSpace account." },
-      { property: "og:title", content: "Account & security — TeamSpace" },
+      { property: "og:title", content: "Account & security â€” TeamSpace" },
       { property: "og:description", content: "Profile, password, email verification and active sessions for your TeamSpace account." },
     ],
   }),
@@ -66,11 +66,11 @@ function Profile() {
         {user.emailVerified ? <BadgeCheck className="size-5 text-success" aria-hidden /> : <MailWarning className="size-5 text-warning" aria-hidden />}
         <div className="flex-1">
           <p className="font-medium">{user.emailVerified ? "Email verified" : "Email not verified"}</p>
-          <p className="text-sm text-muted-foreground">{isDemo ? "Simulated email status; no email is sent in demo mode." : user.emailVerified ? "Your email address has been confirmed." : "Enter the code sent to your email to confirm this address."}</p>
+          <p className="text-sm text-muted-foreground">{!emailEnabled ? "Email is used only to sign in. Verification and email recovery are unavailable." : isDemo ? "Simulated email status; no email is sent in demo mode." : user.emailVerified ? "Your email address has been confirmed." : "Enter the code sent to your email to confirm this address."}</p>
         </div>
-        {!user.emailVerified && <Button variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>Resend verification</Button>}
+        {emailEnabled && !user.emailVerified && <Button variant="outline" onClick={() => resend.mutate()} disabled={resend.isPending}>Resend verification</Button>}
       </div>
-      {!isDemo && !user.emailVerified && <form className={card} onSubmit={(e) => { e.preventDefault(); verify.mutate(); }}>
+      {emailEnabled && !isDemo && !user.emailVerified && <form className={card} onSubmit={(e) => { e.preventDefault(); verify.mutate(); }}>
         <Label htmlFor="verify-code">Verification code</Label>
         <Input id="verify-code" className="mt-2" required autoComplete="off" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
         <Button type="submit" className="mt-4" disabled={verify.isPending}>Verify email</Button>
@@ -135,7 +135,7 @@ function Sessions() {
             <Laptop className="size-5 text-muted-foreground" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{s.userAgent}{s.current && <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-[11px] text-accent-foreground">This device</span>}</p>
-              <p className="text-xs text-muted-foreground">{s.ipAddress} · last active {formatDateTime(s.lastUsedAt)}</p>
+              <p className="text-xs text-muted-foreground">{s.ipAddress} Â· last active {formatDateTime(s.lastUsedAt)}</p>
             </div>
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => revoke.mutate(s)}>{s.current ? "Sign out" : "Revoke"}</Button>
           </li>

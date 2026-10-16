@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/app/AuthLayout";
-import { api, errorMessage, isDemo } from "@/lib/api";
+import { api, errorMessage, isDemo, emailEnabled } from "@/lib/api";
 import { qk } from "@/lib/queries";
 
 export const Route = createFileRoute("/login")({
@@ -17,9 +17,9 @@ export const Route = createFileRoute("/login")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in — TeamSpace" },
+      { title: "Sign in â€” TeamSpace" },
       { name: "description", content: "Sign in to TeamSpace to manage your team's projects and tasks." },
-      { property: "og:title", content: "Sign in — TeamSpace" },
+      { property: "og:title", content: "Sign in â€” TeamSpace" },
       { property: "og:description", content: "Sign in to TeamSpace to manage your team's projects and tasks." },
     ],
   }),
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/login")({
 });
 
 const demoAccounts = [
-  { email: "priya@northwind.dev", note: "Owner · Admin · Member in 3 workspaces" },
+  { email: "priya@northwind.dev", note: "Owner Â· Admin Â· Member in 3 workspaces" },
   { email: "elena@northwind.dev", note: "Member in 2 workspaces" },
   { email: "sofia@harborhealth.org", note: "Owner of Harbor Health" },
 ];
@@ -81,7 +81,7 @@ function LoginPage() {
     finally { setPending(false); }
   };
 
-  if (resetMode) {
+  if (emailEnabled && resetMode) {
     return (
       <AuthLayout title="Reset your password" subtitle="We'll email a single-use code that expires in 30 minutes.">
         <form onSubmit={requestReset} className="space-y-4">
@@ -106,13 +106,14 @@ function LoginPage() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <button type="button" className="text-xs text-primary hover:underline" onClick={() => setResetMode(true)}>Forgot password?</button>
+            {emailEnabled && <button type="button" className="text-xs text-primary hover:underline" onClick={() => setResetMode(true)}>Forgot password?</button>}
           </div>
           <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</Button>
+        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Signing inâ€¦" : "Sign in"}</Button>
       </form>
+      {!emailEnabled && <p className="mt-4 text-sm text-muted-foreground">Password recovery is unavailable. Keep your password safe; you can change it while signed in.</p>}
       <p className="mt-6 text-center text-sm text-muted-foreground">New here? <Link to="/register" className="font-medium text-primary hover:underline">Create an account</Link></p>
       {isDemo && (
         <div className="mt-8 rounded-lg border bg-card p-4">

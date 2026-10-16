@@ -4,6 +4,7 @@ spring:
     username: sa
     password: ""
 teamspace:
+  email-enabled: true
   jwt-secret: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=
   cookie-secure: false
   cookie-same-site: Strict

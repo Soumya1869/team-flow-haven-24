@@ -32,6 +32,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set a base64 32-byte JWT_SECRET}
       COOKIE_SECURE: "false"
       ALLOWED_ORIGINS: http://localhost:5173
+      EMAIL_ENABLED: "true"
       SMTP_HOST: mailpit
 volumes:
   teamspace-db:

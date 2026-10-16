@@ -21,7 +21,9 @@ public class AuthService {
     private final String dummyHash;
     public record Issued(AuthResponse response,String refresh) {}
     public record Actor(User user,Session session) { public UUID id() { return user.id; } }
-    public AuthService(Store db,PasswordEncoder passwords,JwtEncoder jwt,Mailer mail) {
+    private final boolean emailEnabled;
+    public AuthService(Store db,PasswordEncoder passwords,JwtEncoder jwt,Mailer mail, @org.springframework.beans.factory.annotation.Value("${teamspace.email-enabled:false}") boolean emailEnabled) {
+        this.emailEnabled=emailEnabled;
         this.db=db; this.passwords=passwords; this.jwt=jwt; this.mail=mail;
         dummyHash=passwords.encode(UUID.randomUUID().toString());
     }
@@ -48,7 +50,7 @@ public class AuthService {
         validatePassword(body.password());
         if(findEmail(body.email())!=null) throw new ApiException(409,"EMAIL_EXISTS","Email is already registered");
         var u=new User(); u.email=email(body.email()); u.name=body.name().trim(); u.passwordHash=passwords.encode(body.password()); db.save(u);
-        sendToken(u,"VERIFY"); return start(u,request);
+        if(emailEnabled) sendToken(u,"VERIFY"); return start(u,request);
     }
     User findEmail(String email) { return db.one(User.class,"from AppUser where email=?1",email(email)); }
     public Issued login(Login body,HttpServletRequest request) {
@@ -127,6 +129,7 @@ public class AuthService {
         mail.send(u.email,purpose,raw);
     }
     public void requestReset(String email) {
+        requireEmail();
         var u=findEmail(email);
         if(u!=null) {
             db.lock(User.class,u.id);
@@ -137,7 +140,7 @@ public class AuthService {
             }
         }
     }
-    public void resend(Jwt token) { var a=actor(token); db.lock(User.class,a.id()); if(!a.user.emailVerified) sendToken(a.user,"VERIFY"); }
+    public void resend(Jwt token) { requireEmail(); var a=actor(token); db.lock(User.class,a.id()); if(!a.user.emailVerified) sendToken(a.user,"VERIFY"); }
     EmailToken consume(String raw,String purpose) {
         var t=db.one(EmailToken.class,"from EmailToken where hash=?1 and purpose=?2",hash(raw),purpose);
         if(t==null) throw new ApiException(400,"INVALID_TOKEN","Token is invalid or expired");
@@ -146,8 +149,10 @@ public class AuthService {
         t.usedAt=Instant.now(); return t;
     }
     public void reset(Reset body) {
+        requireEmail();
         validatePassword(body.newPassword()); var t=consume(body.token(),"RESET");
         db.get(User.class,t.userId).passwordHash=passwords.encode(body.newPassword()); revokeAll(t.userId,null); invalidateEmailTokens(t.userId,"RESET");
     }
-    public void verify(String raw) { var t=consume(raw,"VERIFY"); db.get(User.class,t.userId).emailVerified=true; }
+    private void requireEmail() { if(!emailEnabled) throw new ApiException(503,"EMAIL_DISABLED","Email verification and password recovery are unavailable on this deployment."); }
+    public void verify(String raw) { requireEmail(); var t=consume(raw,"VERIFY"); db.get(User.class,t.userId).emailVerified=true; }
 }

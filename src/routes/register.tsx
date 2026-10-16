@@ -12,9 +12,9 @@ import { qk } from "@/lib/queries";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Create account — TeamSpace" },
+      { title: "Create account â€” TeamSpace" },
       { name: "description", content: "Create a TeamSpace account and your first workspace." },
-      { property: "og:title", content: "Create account — TeamSpace" },
+      { property: "og:title", content: "Create account â€” TeamSpace" },
       { property: "og:description", content: "Create a TeamSpace account and your first workspace." },
     ],
   }),
@@ -71,11 +71,11 @@ function RegisterPage() {
     <AuthLayout title="Create your account" subtitle="You'll get a workspace of your own to start with.">
       <form onSubmit={submit} className="space-y-4" noValidate>
         {field("name", "Full name", "text", "name")}
-        {field("email", "Work email", "email", "email")}
+        {field("email", "Email (sign-in identifier)", "email", "email")}
         {field("password", "Password", "password", "new-password")}
         {field("confirm", "Confirm password", "password", "new-password")}
         {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
-        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Creating account…" : "Create account"}</Button>
+        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Creating accountâ€¦" : "Create account"}</Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">Already have an account? <Link to="/login" className="font-medium text-primary hover:underline">Sign in</Link></p>
     </AuthLayout>
