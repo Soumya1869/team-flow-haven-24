@@ -17,9 +17,9 @@ export const Route = createFileRoute("/login")({
   },
   head: () => ({
     meta: [
-      { title: "Sign in â€” TeamSpace" },
+      { title: "Sign in — TeamSpace" },
       { name: "description", content: "Sign in to TeamSpace to manage your team's projects and tasks." },
-      { property: "og:title", content: "Sign in â€” TeamSpace" },
+      { property: "og:title", content: "Sign in — TeamSpace" },
       { property: "og:description", content: "Sign in to TeamSpace to manage your team's projects and tasks." },
     ],
   }),
@@ -27,9 +27,16 @@ export const Route = createFileRoute("/login")({
 });
 
 const demoAccounts = [
-  { email: "priya@northwind.dev", note: "Owner Â· Admin Â· Member in 3 workspaces" },
+  { email: "priya@northwind.dev", note: "Owner · Admin · Member in 3 workspaces" },
   { email: "elena@northwind.dev", note: "Member in 2 workspaces" },
   { email: "sofia@harborhealth.org", note: "Owner of Harbor Health" },
+];
+
+// Intentionally public credentials for the shared portfolio demo only.
+const publicTesters = [
+  { role: "Owner", email: "owner.578fa5@example.com", password: "_QpMTMLCaqsvqladJR2s", note: "Manage all roles, members, projects, and tasks." },
+  { role: "Admin", email: "admin.578fa5@example.com", password: "2anJC9TYiT8GxkTR-YIG", note: "Manage projects and regular members." },
+  { role: "Member", email: "member.578fa5@example.com", password: "pkZZSRbgj3AL-Qa1gybY", note: "Create tasks, move cards, assign work, and comment." },
 ];
 
 function LoginPage() {
@@ -46,6 +53,10 @@ function LoginPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    await signIn(email, password);
+  };
+
+  const signIn = async (email: string, password: string, demo = false) => {
     setError(null);
     if (!email || password.length < 8) { setError("Enter your email and a password of at least 8 characters."); return; }
     setPending(true);
@@ -53,7 +64,7 @@ function LoginPage() {
       const res = await api.auth.login({ email, password });
       qc.clear();
       qc.setQueryData(qk.me, res.user);
-      navigate({ to: redirect ?? "/", replace: true });
+      navigate({ to: demo ? "/" : redirect ?? "/", replace: true });
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -111,10 +122,29 @@ function LoginPage() {
           <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Signing inâ€¦" : "Sign in"}</Button>
+        <Button type="submit" className="w-full" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</Button>
       </form>
       {!emailEnabled && <p className="mt-4 text-sm text-muted-foreground">Password recovery is unavailable. Keep your password safe; you can change it while signed in.</p>}
       <p className="mt-6 text-center text-sm text-muted-foreground">New here? <Link to="/register" className="font-medium text-primary hover:underline">Create an account</Link></p>
+      {!isDemo && (
+        <section aria-labelledby="try-demo" className="mt-6 rounded-lg border bg-card p-4">
+          <h2 id="try-demo" className="font-semibold">Try a demo account</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Explore Role Testing Playground with sample tasks. These accounts and changes are shared with everyone. Please keep the credentials and roles unchanged, and use sample data only.</p>
+          <div className="mt-4 space-y-3">
+            {publicTesters.map((account) => (
+              <div key={account.role} className="rounded-md border p-3">
+                <Button type="button" variant="outline" className="w-full" disabled={pending} onClick={() => { setEmail(account.email); setPassword(account.password); void signIn(account.email, account.password, true); }}>Try as {account.role}</Button>
+                <p className="mt-2 text-xs text-muted-foreground">{account.note}</p>
+                <details className="mt-2 text-xs">
+                  <summary className="cursor-pointer">View login credentials</summary>
+                  <p className="mt-2 break-all">Email: <code>{account.email}</code></p>
+                  <p className="mt-1 break-all">Password: <code>{account.password}</code></p>
+                </details>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {isDemo && (
         <div className="mt-8 rounded-lg border bg-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Demo accounts</p>
@@ -133,3 +163,4 @@ function LoginPage() {
     </AuthLayout>
   );
 }
+
